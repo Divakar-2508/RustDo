@@ -5,8 +5,7 @@ use rocket::serde::{Deserialize, Serialize};
 use rocket::Config;
 use rocket::{serde::json::Json, State};
 
-use sqlx::{Row, Pool};
-use sqlx::postgres::Postgres;
+use sqlx::{Pool, Row, Sqlite};
 
 mod db;
 
@@ -24,7 +23,7 @@ fn get_word() -> String {
 }
 
 #[post("/add_todo", format="json", data="<todo>")]
-async fn add_todo(todo: Json<Todo>, pool: &State<Pool<Postgres>>) -> String {
+async fn add_todo(todo: Json<Todo>, pool: &State<Pool<Sqlite>>) -> String {
     if let Err(err) = db::add_row(pool, todo.into_inner()).await {
         err.to_string()
     } else {
@@ -33,7 +32,7 @@ async fn add_todo(todo: Json<Todo>, pool: &State<Pool<Postgres>>) -> String {
 } 
 
 #[get("/get_todo")]
-async fn get_todos(pool: &State<Pool<Postgres>>) -> Json<Vec<Todo>> {
+async fn get_todos(pool: &State<Pool<Sqlite>>) -> Json<Vec<Todo>> {
     let result = db::get_all_rows(pool).await.unwrap();
 
     Json(result.into_iter().map(|row| {
@@ -46,7 +45,7 @@ async fn get_todos(pool: &State<Pool<Postgres>>) -> Json<Vec<Todo>> {
 }
 
 #[get("/get_todo/<id>")]
-async fn get_todo(pool: &State<Pool<Postgres>>, id: i32) -> Result<Json<Todo>, String> {
+async fn get_todo(pool: &State<Pool<Sqlite>>, id: i32) -> Result<Json<Todo>, String> {
     let result = db::get_one_row(pool, id).await;
 
     if let Err(err) = result {
@@ -62,7 +61,7 @@ async fn get_todo(pool: &State<Pool<Postgres>>, id: i32) -> Result<Json<Todo>, S
 }
 
 #[delete("/delete_todo/<id>")]
-async fn delete_todo(pool: &State<Pool<Postgres>>, id: i32) -> String {
+async fn delete_todo(pool: &State<Pool<Sqlite>>, id: i32) -> String {
     match db::delete_row(pool, id).await {
         Err(err) => format!("Error: {}", err),
         Ok(res) => res
