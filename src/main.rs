@@ -20,7 +20,7 @@ struct Todo {
 
 #[get("/")]
 fn get_word() -> String {
-    String::from("Hello, World!")
+    String::from("Potta da nee")
 }
 
 #[post("/add_todo", format="json", data="<todo>")]

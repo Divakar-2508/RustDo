@@ -1,5 +1,5 @@
-use sqlx::{postgres::{PgPoolOptions, PgRow}, Error, Pool, Postgres};
-
+use sqlx::{sqlite::{SqliteConnectOptions, Sqlite}, Error, Pool};
+use sqlx::ConnectOptions;
 use crate::Todo;
 
 const INSERT_QUERY: &str = "INSERT INTO todos (task_id, task, completed) values ($1, $2, $3)";
@@ -7,7 +7,7 @@ const SELECT_QUERY: &str = "SELECT * FROM todos";
 const DELETE_QUERY: &str = "DELETE FROM todos";
 const WHERE_CLAUSE: &str = "WHERE task_id = $1";
 
-pub async fn add_row(pool: &Pool<Postgres>, todo: Todo) -> Result<(), Error> {
+pub async fn add_row(pool: &Pool<Sqlite>, todo: Todo) -> Result<(), Error> {
     sqlx::query(INSERT_QUERY)
         .bind(todo.id)
         .bind(todo.name)
@@ -16,13 +16,13 @@ pub async fn add_row(pool: &Pool<Postgres>, todo: Todo) -> Result<(), Error> {
     Ok(())
 }
 
-pub async fn get_all_rows(pool: &Pool<Postgres>) -> Result<Vec<PgRow>, sqlx::Error> {
+pub async fn get_all_rows(pool: &Pool<Sqlite>) -> Result<Vec<PgRow>, sqlx::Error> {
     sqlx::query(SELECT_QUERY)
         .fetch_all(pool)
         .await
 }
 
-pub async fn get_one_row(pool: &Pool<Postgres>, task_id: i32) -> Result<PgRow, sqlx::Error> {
+pub async fn get_one_row(pool: &Pool<Sqlite>, task_id: i32) -> Result<PgRow, sqlx::Error> {
     let query = format!("{} {}", SELECT_QUERY, WHERE_CLAUSE);
 
     sqlx::query(&query)
@@ -31,7 +31,7 @@ pub async fn get_one_row(pool: &Pool<Postgres>, task_id: i32) -> Result<PgRow, s
         .await
 }
 
-pub async fn delete_row(pool: &Pool<Postgres>, id: i32) -> Result<String, sqlx::Error> {
+pub async fn delete_row(pool: &Pool<Sqlite>, id: i32) -> Result<String, sqlx::Error> {
     let query = format!("{} {}", DELETE_QUERY, WHERE_CLAUSE);
     let result = sqlx::query(&query)
         .bind(id)
@@ -45,13 +45,15 @@ pub async fn delete_row(pool: &Pool<Postgres>, id: i32) -> Result<String, sqlx::
     }
 }
 
-pub async fn establish_connection() -> Result<Pool<Postgres>, sqlx::Error> {
-    let database_url = "postgresql://postgres:sHARINGAN@1@localhost/todos";
+pub async fn establish_connection() -> Result<Pool<Sqlite>, sqlx::Error> {
+    let database_url = "todo.db";
 
-    let pool = PgPoolOptions::new()
-        .max_connections(10)
-        .connect(database_url)
-        .await?;
+    let pool_options = SqliteConnectOptions::new()
+        .filename(database_url)
+        .create_if_missing(true)
+        .connect().await?;
+    
+    let pool_sql = SqliteConnection::
 
     Ok(pool)
 }
