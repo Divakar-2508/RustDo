@@ -18,11 +18,6 @@ struct Todo {
     done: bool,
 }
 
-#[get("/<name>")]
-fn get_word(name: String) -> String {
-    format!("GG. {}", name)
-}
-
 #[post("/add_todo", format="json", data="<todo>")]
 async fn add_todo(todo: Json<Todo>, pool: &State<Pool<Postgres>>) -> String {
     if let Err(err) = db::add_row(pool, todo.into_inner()).await {
@@ -69,6 +64,11 @@ async fn delete_todo(pool: &State<Pool<Postgres>>, id: i32) -> String {
     }
 }
 
+#[get("/")]
+async fn charukesh() -> String {
+    "Hello, Charukesh".to_string()
+}
+
 #[launch]
 async fn launch() -> _ {
     let pool = db::establish_connection().await.expect("Can't establish connection");
@@ -83,5 +83,5 @@ async fn launch() -> _ {
             ..Config::default()
         })
         .attach(cors)
-        .mount("/", routes![get_word, add_todo, get_todos, delete_todo, get_todo])
+        .mount("/", routes![add_todo, get_todos, delete_todo, get_todo, charukesh])
 }
