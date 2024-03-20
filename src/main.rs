@@ -18,9 +18,9 @@ struct Todo {
     done: bool,
 }
 
-#[get("/")]
-fn get_word() -> String {
-    String::from("Hello, World!")
+#[get("/<name>")]
+fn get_word(name: String) -> String {
+    format!("GG. {}", name)
 }
 
 #[post("/add_todo", format="json", data="<todo>")]
