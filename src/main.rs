@@ -55,7 +55,7 @@ async fn get_todo(pool: &State<Pool<Sqlite>>, id: i32) -> Result<Json<Todo>, Str
     let result = db::get_one_row(pool, id).await;
 
     if let Err(err) = result {
-        return Err(format!("No Todo with the specified id\nError: {}", err));
+        return Err(format!("No Todo with the Specified Id\nError: {}", err));
     } else {
         let row = result.unwrap();
         return Ok(
