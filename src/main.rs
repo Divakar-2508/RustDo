@@ -18,8 +18,14 @@ struct Todo {
 }
 
 #[get("/")]
-fn get_word() -> String {
-    String::from("Potta da nee")
+fn get_help() -> String {
+    String::from("
+        Routes:
+            [get]    get_todo/<id> (use without id to get all data)
+            [post]   add_todo (with JSON Body {id, name, done}) 
+            [delete] delete_todo/<id>
+            [get]    `/` - show this message
+    ")
 }
 
 #[post("/add_todo", format="json", data="<todo>")]
@@ -49,7 +55,7 @@ async fn get_todo(pool: &State<Pool<Sqlite>>, id: i32) -> Result<Json<Todo>, Str
     let result = db::get_one_row(pool, id).await;
 
     if let Err(err) = result {
-        return Err(format!("Error: {}", err));
+        return Err(format!("No Todo with the specified id\nError: {}", err));
     } else {
         let row = result.unwrap();
         return Ok(
@@ -82,5 +88,5 @@ async fn launch() -> _ {
             ..Config::default()
         })
         .attach(cors)
-        .mount("/", routes![get_word, add_todo, get_todos, delete_todo, get_todo])
+        .mount("/", routes![get_help, add_todo, get_todos, delete_todo, get_todo])
 }
