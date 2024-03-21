@@ -18,6 +18,17 @@ struct Todo {
     done: bool,
 }
 
+#[get("/")]
+fn get_help() -> String {
+    String::from("
+        Routes:
+            [get]    get_todo/<id> (use without id to get all data)
+            [post]   add_todo (with JSON Body {id, name, done}) 
+            [delete] delete_todo/<id>
+            [get]    `/` - show this message
+    ")
+}
+
 #[post("/add_todo", format="json", data="<todo>")]
 async fn add_todo(todo: Json<Todo>, pool: &State<Pool<Postgres>>) -> String {
     if let Err(err) = db::add_row(pool, todo.into_inner()).await {
@@ -45,7 +56,7 @@ async fn get_todo(pool: &State<Pool<Postgres>>, id: i32) -> Result<Json<Todo>, S
     let result = db::get_one_row(pool, id).await;
 
     if let Err(err) = result {
-        return Err(format!("Error: {}", err));
+        return Err(format!("No Todo with the Specified ID\nError: {}", err));
     } else {
         let row = result.unwrap();
         return Ok(
@@ -64,11 +75,6 @@ async fn delete_todo(pool: &State<Pool<Postgres>>, id: i32) -> String {
     }
 }
 
-#[get("/")]
-async fn charukesh() -> String {
-    "Hello, Charukesh".to_string()
-}
-
 #[launch]
 async fn launch() -> _ {
     let pool = db::establish_connection().await.expect("Can't establish connection");
@@ -83,5 +89,5 @@ async fn launch() -> _ {
             ..Config::default()
         })
         .attach(cors)
-        .mount("/", routes![add_todo, get_todos, delete_todo, get_todo, charukesh])
+        .mount("/", routes![add_todo, get_todos, delete_todo, get_todo, get_help])
 }
