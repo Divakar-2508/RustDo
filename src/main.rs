@@ -17,6 +17,56 @@ struct Todo {
     done: bool,
 }
 
+
+#[derive(Serialize, Deserialize)]
+#[serde(crate="rocket::serde")]
+struct ModifiedData {
+    name: Option<String>,
+    done: Option<bool>
+}
+
+enum ChangeState {
+    Name,
+    Done,
+    Both
+}
+
+impl ModifiedData {
+    fn name_changed(&self) -> bool {
+        if self.name.is_some() {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    fn done_changed(&self) -> bool {
+        if self.done.is_some() {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    fn get_name(self) -> Option<String> {
+        return self.name.clone()
+    }
+
+    fn get_done(&mut self) -> Option<bool> {
+        return self.done
+    }
+
+    fn get_state(&self) -> ChangeState {
+        if self.name_changed() && self.done_changed() {
+            return ChangeState::Both;
+        } else if self.done_changed() {
+            return ChangeState::Done;
+        } else{
+            return ChangeState::Name;
+        }
+    }
+}
+
 #[get("/")]
 fn get_help() -> String {
     String::from("
@@ -66,6 +116,30 @@ async fn get_todo(pool: &State<Pool<Sqlite>>, id: i32) -> Result<Json<Todo>, Str
     }
 }
 
+
+#[patch("/update_todo/<id>", format="json", data="<data>")]
+async fn update_todo(pool: &State<Pool<Sqlite>>, id: i32, data: Json<ModifiedData>) -> String {
+    let mut modified_data = data.into_inner();
+    
+    let result = match modified_data.get_state() {
+        ChangeState::Both => {
+            db::update_row(pool, id, modified_data.get_done(), modified_data.get_name()).await
+        },
+        ChangeState::Name => {
+            db::update_row(pool, id, None, modified_data.get_name()).await
+        },
+        ChangeState::Done => {
+            db::update_row(pool, id, modified_data.get_done(), None).await
+        }
+    };
+
+    if let Err(err) = result {
+        return format!("No Todo with the Specified Id\nError: {}", err);
+    } else {
+        return result.unwrap();
+    }
+}
+
 #[delete("/delete_todo/<id>")]
 async fn delete_todo(pool: &State<Pool<Sqlite>>, id: i32) -> String {
     match db::delete_row(pool, id).await {
@@ -88,5 +162,5 @@ async fn launch() -> _ {
             ..Config::default()
         })
         .attach(cors)
-        .mount("/", routes![get_help, add_todo, get_todos, delete_todo, get_todo])
+        .mount("/", routes![get_help, add_todo, get_todos, delete_todo, get_todo, update_todo])
 }
