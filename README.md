@@ -1,3 +1,7 @@
+## RustDo
+
+RustDo is a simple yet powerful Todo API built using the Rust programming language and the Rocket web framework. This API allows users to manage their todo lists effortlessly, including adding, viewing, updating, and deleting tasks.
+
 ## Usage
 
 - To add a new todo, make a POST request to `/add_todo` with the following JSON payload:
